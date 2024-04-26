@@ -1,0 +1,128 @@
+name: Apply
+
+# Only one workflow can run at a time
+# If there is newer workflow in progress, cancel older ones
+concurrency:
+  group: apply
+  cancel-in-progress: true
+
+# Put 'on' in quotes to avoid YAML parsing error
+"on":
+  # Enable manual triggering
+  workflow_dispatch: {}
+  # Run on commits to main branch
+  push:
+    branches:
+      - main
+    # Run only on changes to relevant files
+    paths:
+      - .github/workflows/apply.yaml
+      - src/**
+      - .sops.yaml
+      - flake.lock
+      - "*.nix"
+      - Taskfile.dist.yaml
+
+jobs:
+  apply:
+    name: Apply
+    # Pin version of Ubuntu to avoid breaking changes
+    runs-on: ubuntu-22.04
+    # Use reasonable timeout to avoid stuck workflows
+    timeout-minutes: 10
+    # Use main environment
+    environment:
+      name: main
+    env:
+      NIX_CACHE_DIR: /home/runner/.nixcache/
+      TERRAFORM_BACKEND_CONFIG: /home/runner/config.tfbackend
+      TERRAFORM_CACHE_DIR: /home/runner/.terraformcache/
+    permissions:
+      # Needed to checkout code
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+      - name: Setup Nix cache
+        uses: actions/cache@v4.0.1
+        id: cache-nix
+        with:
+          path: {{ '${{ env.NIX_CACHE_DIR }}' }}
+          key: apply-nix
+      - name: Setup Terraform cache
+        uses: actions/cache@v4.0.1
+        id: cache-terraform
+        with:
+          path: {{ '${{ env.TERRAFORM_CACHE_DIR }}' }}
+          key: apply-terraform
+      # Create Terraform cache directory if not imported from cache
+      - name: Create Terraform cache directory
+        if: steps.cache-terraform.outputs.cache-hit != 'true'
+        run: >
+          mkdir
+          --parents
+          {{ '${{ env.TERRAFORM_CACHE_DIR }}' }}
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+        with:
+          github_access_token: {{ '${{ github.token }}' }}
+          install_url: https://releases.nixos.org/nix/nix-2.20.5/install
+      # See: https://github.com/cachix/install-nix-action/issues/56
+      - name: Import Nix store cache
+        if: steps.cache-nix.outputs.cache-hit == 'true'
+        run: >
+          nix-store
+          --import
+          < {{ '${{ env.NIX_CACHE_DIR }}/archive.nar' }}
+      - name: Create backend configuration
+        run: |
+          cat <<EOF > {{ '${{ env.TERRAFORM_BACKEND_CONFIG }}' }}
+          {%- if backend in ('s3', 'r2') %}
+          access_key = {{ '"${{ secrets.TERRAFORM_BACKEND_ACCESS_KEY }}"' }}
+          endpoints = {
+            s3 = {{ '"${{ secrets.TERRAFORM_BACKEND_ENDPOINT }}"' }}
+          }
+          secret_key = {{ '"${{ secrets.TERRAFORM_BACKEND_SECRET_KEY }}"' }}
+          {%- endif %}
+          EOF
+      - name: Initialize
+        env:
+          SOPS_AGE_KEY: {{ '${{ secrets.SOPS_AGE_KEY }}' }}
+          TF_PLUGIN_CACHE_DIR: {{ '${{ env.TERRAFORM_CACHE_DIR }}' }}
+        run: >
+          nix
+          develop
+          ./#terraform
+          --command
+          --
+          task
+          init
+          --
+          -input=false
+          -backend-config={{ '${{ env.TERRAFORM_BACKEND_CONFIG }}' }}
+      - name: Apply
+        env:
+          SOPS_AGE_KEY: {{ '${{ secrets.SOPS_AGE_KEY }}' }}
+          TF_PLUGIN_CACHE_DIR: {{ '${{ env.TERRAFORM_CACHE_DIR }}' }}
+        run: >
+          nix
+          develop
+          ./#terraform
+          --command
+          --
+          task
+          apply
+          --
+          -input=false
+          -auto-approve
+      # See: https://github.com/cachix/install-nix-action/issues/56
+      - name: Export Nix store cache
+        if: "!cancelled()"
+        run: >
+          mkdir
+          --parents
+          {{ '${{ env.NIX_CACHE_DIR }}' }}
+          &&
+          nix-store
+          --export $(find /nix/store/ -maxdepth 1 -name '*-*')
+          > {{ '${{ env.NIX_CACHE_DIR }}/archive.nar' }}

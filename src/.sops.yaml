@@ -1,0 +1,8 @@
+# This are the public keys of the age keypairs used to encrypt files
+# You should have the private keys on your machine
+keys: []
+creation_rules:
+  # Allow any path in src to be encrypted
+  - path_regex: src/.*
+    key_groups:
+      - age: []
