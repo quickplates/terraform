@@ -1,0 +1,48 @@
+# Terraform settings
+terraform {
+{%- if backend == 'local' %}
+  # Store state locally
+  backend "local" {
+    path = "{{ statefile }}"
+  }
+{% elif backend == 's3' %}
+  # Store state in a remote backend
+  backend "s3" {
+    # Bucket name
+    bucket = "{{ bucket }}"
+
+    # Path to the state file in the bucket
+    key = "{{ statefile }}"
+
+    # Region of the bucket
+    region = "{{ region }}"
+  }
+{% elif backend == 'r2' %}
+  # Store state in a remote backend
+  backend "s3" {
+    # Bucket name
+    bucket = "{{ bucket }}"
+
+    # Path to the state file in the bucket
+    key = "{{ statefile }}"
+
+    # Region of the bucket
+    region = "{{ region }}"
+
+    # These are required, because it's actually Cloudflare R2, not AWS S3
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
+  }
+{% endif %}
+  # Require the following providers
+  required_providers {
+    # SOPS provider used to decrypt secrets
+    sops = {
+      source  = "carlpett/sops"
+      version = "~> 1.0"
+    }
+  }
+}

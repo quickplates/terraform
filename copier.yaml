@@ -1,0 +1,66 @@
+# Questions
+
+accountname:
+  type: str
+  help: The name of the organization on GitHub
+
+projectname:
+  type: str
+  help: The name of the project
+
+description:
+  type: str
+  help: A short description of the project
+
+reponame:
+  type: str
+  help: The name of the repository
+  default: "{{ projectname }}"
+
+repourl:
+  type: str
+  help: The URL of the repository
+  default: "https://github.com/{{ accountname }}/{{ reponame }}"
+
+backend:
+  type: str
+  help: The backend to use to store Terraform state
+  choices:
+    - local
+    - s3
+    - r2
+  default: local
+
+statefile:
+  type: str
+  help: The path to the Terraform state file
+  default: terraform.tfstate
+  when: "{{ backend in ('local', 's3', 'r2') }}"
+
+bucket:
+  type: str
+  help: The name of the bucket to store the Terraform state file
+  default: "{{ projectname }}"
+  when: "{{ backend in ('s3', 'r2') }}"
+
+region:
+  type: str
+  help: The region of the bucket to store the Terraform state file
+  default: "{{ {'s3': 'us-east-1', 'r2': 'enam'}[backend] }}"
+  when: "{{ backend in ('s3', 'r2') }}"
+
+docs:
+  type: bool
+  help: Whether to include a documentation site for the project
+  default: true
+
+docsurl:
+  type: str
+  help: The URL of the documentation site for the project
+  default: "https://{{ accountname }}.github.io/{{ reponame }}"
+  when: "{{ docs }}"
+
+# Configuration
+
+_subdirectory: src
+_answers_file: .copier-answers.yaml

@@ -1,0 +1,12 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 0.7.1
+_src_path: gh:quickplates/meta
+accountname: quickplates
+description: Terraform resources template 🌎
+example: true
+exampleaccountname: quickplates
+exampledescription: Terraform resources example 🌎
+examplereponame: terraform-example
+reponame: terraform
+repourl: https://github.com/quickplates/terraform
+type: generic
