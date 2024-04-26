@@ -41,6 +41,8 @@ copier copy gh:quickplates/terraform .
 - continuous integration with [`GitHub Actions`](https://github.com/features/actions)
 - easy to write and nice looking documentation
   with [`Docusaurus`](https://docusaurus.io)
+- secrets management with [`SOPS`](https://github.com/getsops/sops)
+- integration with [`GitHub Environments`](https://docs.github.com/actions/deployment/targeting-different-environments)
 
 ## 💻 Development
 
