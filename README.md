@@ -15,7 +15,8 @@ Terraform resources template 🌎
 ## 💡 About
 
 This repository contains a [`copier`](https://copier.readthedocs.io) template
-that can be used to create [`Terraform`](https://www.terraform.io) resources.
+that can be used to create projects containing
+[`Terraform`](https://www.terraform.io) resources.
 
 You can view the example of project generated from this template
 [**here**](https://github.com/quickplates/terraform-example).

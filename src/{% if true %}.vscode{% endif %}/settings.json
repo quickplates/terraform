@@ -1,8 +1,8 @@
 {
-  "[terraform]": {
+  "[terraform-vars]": {
     "editor.tabSize": 2
   },
-  "[terraform-vars]": {
+  "[terraform]": {
     "editor.tabSize": 2
   }
 }
