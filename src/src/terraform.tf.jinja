@@ -42,10 +42,10 @@ terraform {
     # SOPS provider used to decrypt secrets
     sops = {
       source  = "carlpett/sops"
-      version = "~> 1.4"
+      version = "~> 1.4.0"
     }
   }
 
-  # Require minimum Terraform version
-  required_version = "~> 1.15"
+  # Require Terraform version
+  required_version = "~> 1.15.0"
 }
